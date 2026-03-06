@@ -1,0 +1,30 @@
+groups:
+  - name: flask-app-alerts
+    rules:
+      # Error rate > 5%
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_errors_total[5m])) by (endpoint)
+            /
+            sum(rate(http_requests_total[5m])) by (endpoint)
+          ) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on {{ $labels.endpoint }}"
+          description: "Error rate is above 5% for 10 minutes (current: {{ $value | humanize }})"
+
+      # Latency p99 above 300ms for 10m
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, endpoint)
+          ) > 0.3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency on {{ $labels.endpoint }}"
+          description: "p99 latency above 300ms for 10 minutes (current: {{ $value | humanizeDuration }}s)"

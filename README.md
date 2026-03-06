@@ -6,8 +6,21 @@ A simple Python Flask web application containerized with Docker. This project de
 ## Project Structure
 ```
 docker-lab/
-├── app.py              # Flask application
-└── Dockerfile          # Docker image definition
+├── app.py                    # Flask app (OTel, RED metrics, JSON logs)
+├── otel_config.py            # OpenTelemetry → Jaeger (OTLP)
+├── logging_config.py         # JSON logs with trace_id/span_id
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml        # App + Jaeger + Prometheus + Grafana
+├── prometheus/
+│   ├── prometheus.yml
+│   └── alerts.yml            # Error rate >5%, p99 >300ms for 10m
+├── grafana/
+│   ├── dashboards/observability.json
+│   └── provisioning/
+├── scripts/validate_observability.sh
+├── screenshots/              # Submission screenshots
+└── REPORT.md                 # 2-page symptom → trace → root cause report
 ```
 
 ## Purpose
@@ -58,5 +71,27 @@ This application is will be used with the nginx-proxy project in the labs:
 
 
 
+## Observability (Prometheus + Grafana + Jaeger)
+
+**Run full stack:**
+```bash
+docker compose up -d
+```
+- App: http://localhost:5000  
+- Grafana: http://localhost:3000 (admin/admin)  
+- Prometheus: http://localhost:9090  
+- Jaeger: http://localhost:16686  
+
+**App env (optional):**
+- `OTEL_EXPORTER_OTLP_ENDPOINT` – Jaeger OTLP HTTP (default `http://jaeger:4318`)
+- `OTEL_SERVICE_NAME` – service name in traces (default `docker-lab-flask`)
+- `ENABLE_TEST_ROUTES=1` – enable `/simulate-error` and `/simulate-slow` for validation (set to `0` in production to remove test routes)
+
+**Validation:** With test routes enabled, run `./scripts/validate_observability.sh` to generate errors and slow requests. After ~10m, confirm alerts in Prometheus, then in Jaeger find a trace and in logs (or stdout) search by `trace_id` for correlation. Fill `REPORT.md` and add screenshots under `screenshots/`.
+
+---
+
 ## Dependencies
-- Flask: Web framework for handling HTTP requests
+- Flask, requests
+- OpenTelemetry (Flask + Requests instrumentors, OTLP exporter)
+- prometheus-client

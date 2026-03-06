@@ -1,0 +1,13 @@
+.git
+__pycache__
+*.pyc
+.venv
+venv
+.env
+*.md
+screenshots
+grafana
+prometheus
+scripts
+docker-compose*.yml
+.dockerignore
